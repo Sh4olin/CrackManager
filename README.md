@@ -30,4 +30,3 @@ The tool will automatically delete all the crack files it copied and restore you
 * The tool works with multiple games at the same time. It keeps track of everything separately.
 * When you apply your first crack, the tool will create a folder named `Original Files` and a file named `patch_log.json` in the same directory as this `.exe`.
 * **DO NOT DELETE** the `Original Files` folder or the `patch_log.json` file! If you delete them, the tool will not be able to restore your game.
-* You can find the original source code in the `CrackManagerSource` folder.
