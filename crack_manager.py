@@ -40,25 +40,27 @@ def check_structure(*args):
         btn_apply_action.configure(state="disabled", fg_color="#333333")
         return
 
-    match = True
     has_files = False
-    
-    for root, dirs, files in os.walk(crack):
+    for _, _, files in os.walk(crack):
         if files:
             has_files = True
-        rel_path = os.path.relpath(root, crack)
-        if rel_path == ".": 
-            continue
-        game_equiv = os.path.join(game, rel_path)
-        if not os.path.isdir(game_equiv):
-            match = False
             break
-            
+    
     if not has_files:
         status_label.configure(text="Crack folder is empty.", text_color="#E84A5F")
         btn_apply_action.configure(state="disabled", fg_color="#333333")
-    elif match:
-        status_label.configure(text="✔ Folder structure matches perfectly!", text_color="#2FA572")
+        return
+
+    match = True
+    top_level_crack = [d for d in os.listdir(crack) if os.path.isdir(os.path.join(crack, d))]
+    
+    for d in top_level_crack:
+        if not os.path.isdir(os.path.join(game, d)):
+            match = False
+            break
+
+    if match:
+        status_label.configure(text="✔ Folder structure matches!", text_color="#2FA572")
         btn_apply_action.configure(state="normal", fg_color="#2FA572")
     else:
         status_label.configure(text="✖ Structure mismatch. Check selected folders.", text_color="#E84A5F")
