@@ -4,6 +4,7 @@ import json
 import sys
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
+from tkinterdnd2 import DND_FILES, TkinterDnD
 
 if getattr(sys, 'frozen', False):
     base = os.path.dirname(sys.executable)
@@ -153,6 +154,17 @@ def revert():
     update_list()
     messagebox.showinfo("Success", "Reverted to original successfully.")
 
+def handle_drop(event, var, entry):
+    path = event.data
+    if path.startswith('{') and path.endswith('}'):
+        path = path[1:-1]
+    
+    if os.path.isdir(path):
+        var.set(path)
+        entry.after(10, lambda: scroll_to_end(entry))
+    else:
+        messagebox.showwarning("Invalid Input", "Please drop a folder, not a file.")
+
 def scroll_to_end(widget):
     try:
         if hasattr(widget, "icursor"):
@@ -209,7 +221,12 @@ def show_revert():
 
 ctk.set_appearance_mode("dark")
 
-window = ctk.CTk()
+class App(ctk.CTk, TkinterDnD.DnDWrapper):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.TkdndVersion = TkinterDnD._require(self)
+
+window = App()
 window.title("Crack Manager")
 window.geometry("642x420")
 window.configure(fg_color="#101010")
@@ -254,6 +271,10 @@ row1 = ctk.CTkFrame(g1, fg_color="transparent")
 row1.pack()
 entry_game = ctk.CTkEntry(row1, textvariable=game_var, width=400, font=main_font, height=35)
 entry_game.pack(side="left", padx=(10, 5))
+
+entry_game.drop_target_register(DND_FILES) # type: ignore
+entry_game.dnd_bind('<<Drop>>', lambda e: handle_drop(e, game_var, entry_game)) # type: ignore
+
 ctk.CTkButton(row1, text="Browse", width=90, height=35, font=main_font, command=lambda: find_dir(game_var, entry_game)).pack(side="left", padx=(5, 10))
 
 g2 = ctk.CTkFrame(inputs_apply, fg_color="transparent")
@@ -263,6 +284,10 @@ row2 = ctk.CTkFrame(g2, fg_color="transparent")
 row2.pack()
 entry_crack = ctk.CTkEntry(row2, textvariable=crack_var, width=400, font=main_font, height=35)
 entry_crack.pack(side="left", padx=(10, 5))
+
+entry_crack.drop_target_register(DND_FILES) # type: ignore
+entry_crack.dnd_bind('<<Drop>>', lambda e: handle_drop(e, crack_var, entry_crack)) # type: ignore
+
 ctk.CTkButton(row2, text="Browse", width=90, height=35, font=main_font, command=lambda: find_dir(crack_var, entry_crack)).pack(side="left", padx=(5, 10))
 
 status_label = ctk.CTkLabel(g2, text="Waiting for folders...", font=main_font, text_color="#666666")
