@@ -52,19 +52,14 @@ def check_structure(*args):
         btn_apply_action.configure(state="disabled", fg_color="#333333")
         return
 
-    match = True
-    top_level_crack = [d for d in os.listdir(crack) if os.path.isdir(os.path.join(crack, d))]
+    crack_items = set(os.listdir(crack))
+    game_items = set(os.listdir(game))
     
-    for d in top_level_crack:
-        if not os.path.isdir(os.path.join(game, d)):
-            match = False
-            break
-
-    if match:
+    if crack_items.intersection(game_items):
         status_label.configure(text="✔ Folder structure matches!", text_color="#2FA572")
         btn_apply_action.configure(state="normal", fg_color="#2FA572")
     else:
-        status_label.configure(text="✖ Structure mismatch. Check selected folders.", text_color="#E84A5F")
+        status_label.configure(text="✖ No common files/folders. Check selected paths.", text_color="#E84A5F")
         btn_apply_action.configure(state="disabled", fg_color="#333333")
 
 def apply():
