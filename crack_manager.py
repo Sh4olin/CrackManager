@@ -2,6 +2,7 @@ import os
 import shutil
 import json
 import sys
+import stat
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 from tkinterdnd2 import DND_FILES, TkinterDnD
@@ -128,33 +129,52 @@ def revert():
         messagebox.showwarning("Error", "No log found for this game.")
         return
 
-    game_data = data[game]
-    copied = game_data.get("copied", [])
-    backup_dir = game_data.get("backup", "")
+    try:
+        game_data = data[game]
+        copied = game_data.get("copied", [])
+        backup_dir = game_data.get("backup", "")
 
-    for rel in copied:
-        game_path = os.path.join(game, rel)
-        if os.path.exists(game_path):
-            os.remove(game_path)
+        for rel in copied:
+            game_path = os.path.join(game, rel)
+            if os.path.exists(game_path):
+                try:
+                    os.chmod(game_path, stat.S_IWRITE)
+                    os.remove(game_path)
+                except Exception as e:
+                    raise Exception(f"Permission denied on {rel}. Close the game and try again.")
+            
+            parent = os.path.dirname(game_path)
+            while parent and parent != game:
+                try:
+                    if not os.listdir(parent):
+                        os.rmdir(parent)
+                    else:
+                        break 
+                    parent = os.path.dirname(parent)
+                except:
+                    break
 
-    if os.path.exists(backup_dir):
-        for root, dirs, files in os.walk(backup_dir):
-            for file_name in files:
-                backup_path = os.path.join(root, file_name)
-                rel = os.path.relpath(backup_path, backup_dir)
-                game_path = os.path.join(game, rel)
-                
-                game_dir = os.path.dirname(game_path)
-                if not os.path.exists(game_dir):
-                    os.makedirs(game_dir)
-                shutil.copy2(backup_path, game_path)
+        if os.path.exists(backup_dir):
+            for root, dirs, files in os.walk(backup_dir):
+                for file_name in files:
+                    backup_path = os.path.join(root, file_name)
+                    rel = os.path.relpath(backup_path, backup_dir)
+                    game_path = os.path.join(game, rel)
+                    
+                    game_dir = os.path.dirname(game_path)
+                    if not os.path.exists(game_dir):
+                        os.makedirs(game_dir)
+                    shutil.copy2(backup_path, game_path)
 
-        shutil.rmtree(backup_dir)
+            shutil.rmtree(backup_dir)
 
-    del data[game]
-    save_log(data)
-    update_list()
-    messagebox.showinfo("Success", "Reverted to original successfully.")
+        del data[game]
+        save_log(data)
+        update_list()
+        messagebox.showinfo("Success", "Reverted to original successfully!")
+        
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to revert: {str(e)}\n\nMake sure the game is not running.")
 
 def handle_drop(event, var, entry):
     path = event.data
