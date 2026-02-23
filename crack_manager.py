@@ -77,7 +77,10 @@ def apply():
     if not os.path.exists(dest):
         os.makedirs(dest)
 
-    copied = []
+    if game in data:
+        copied = data[game].get("copied", [])
+    else:
+        copied = []
 
     for root, dirs, files in os.walk(crack):
         for file_name in files:
@@ -90,14 +93,16 @@ def apply():
                 backup_dir = os.path.dirname(backup_path)
                 if not os.path.exists(backup_dir):
                     os.makedirs(backup_dir)
-                shutil.copy2(game_path, backup_path)
+                if not os.path.exists(backup_path):
+                    shutil.copy2(game_path, backup_path)
 
             game_dir = os.path.dirname(game_path)
             if not os.path.exists(game_dir):
                 os.makedirs(game_dir)
             shutil.copy2(crack_path, game_path)
             
-            copied.append(rel)
+            if rel not in copied:
+                copied.append(rel)
 
     data[game] = {
         "backup": dest,
@@ -131,12 +136,22 @@ def revert():
 
         for rel in copied:
             game_path = os.path.join(game, rel)
+            file_name = os.path.basename(rel)
+            root_path = os.path.join(game, file_name)
+
             if os.path.exists(game_path):
                 try:
                     os.chmod(game_path, stat.S_IWRITE)
                     os.remove(game_path)
                 except Exception as e:
                     raise Exception(f"Permission denied on {rel}. Close the game and try again.")
+            
+            elif os.path.exists(root_path) and root_path != game_path:
+                try:
+                    os.chmod(root_path, stat.S_IWRITE)
+                    os.remove(root_path)
+                except Exception:
+                    pass
             
             parent = os.path.dirname(game_path)
             while parent and parent != game:
