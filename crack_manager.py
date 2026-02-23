@@ -55,12 +55,14 @@ def check_structure(*args):
     crack_items = set(os.listdir(crack))
     game_items = set(os.listdir(game))
     
+    # Mostra status verde se bater, ou aviso amarelo se forem apenas arquivos novos
     if crack_items.intersection(game_items):
         status_label.configure(text="✔ Folder structure matches!", text_color="#2FA572")
-        btn_apply_action.configure(state="normal", fg_color="#2FA572")
     else:
-        status_label.configure(text="✖ No common files/folders. Check selected paths.", text_color="#E84A5F")
-        btn_apply_action.configure(state="disabled", fg_color="#333333")
+        status_label.configure(text="⚠ No common files. Adding new files only.", text_color="#E5A93C")
+        
+    # O botão SEMPRE é liberado se as pastas forem válidas e não estiverem vazias
+    btn_apply_action.configure(state="normal", fg_color="#2FA572")
 
 def apply():
     game = game_var.get()
@@ -266,13 +268,13 @@ def show_revert():
 
 ctk.set_appearance_mode("dark")
 
-class App(ctk.CTk, TkinterDnD.DnDWrapper):
+class App(ctk.CTk, TkinterDnD.DnDWrapper): # type: ignore
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.TkdndVersion = TkinterDnD._require(self)
 
 window = App()
-window.title("Crack Manager")
+window.title("Patch Manager")
 window.geometry("642x420")
 window.configure(fg_color="#101010")
 
