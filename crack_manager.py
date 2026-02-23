@@ -82,6 +82,9 @@ def apply():
     else:
         copied = []
 
+    copied_files = 0
+    replaced_files = 0
+
     for root, dirs, files in os.walk(crack):
         for file_name in files:
             crack_path = os.path.join(root, file_name)
@@ -89,10 +92,14 @@ def apply():
             game_path = os.path.join(game, rel)
             backup_path = os.path.join(dest, rel)
 
+            copied_files += 1
+
             if os.path.exists(game_path):
+                replaced_files += 1
                 backup_dir = os.path.dirname(backup_path)
                 if not os.path.exists(backup_dir):
                     os.makedirs(backup_dir)
+                
                 if not os.path.exists(backup_path):
                     shutil.copy2(game_path, backup_path)
 
@@ -111,7 +118,7 @@ def apply():
     
     save_log(data)
     update_list()
-    messagebox.showinfo("Success", "Crack applied successfully.")
+    messagebox.showinfo("Success", f"Crack applied successfully!\n\nFiles copied: {copied_files}\nFiles replaced: {replaced_files}")
     game_var.set("")
     crack_var.set("")
 
@@ -134,6 +141,9 @@ def revert():
         copied = game_data.get("copied", [])
         backup_dir = game_data.get("backup", "")
 
+        removed_files = 0
+        restored_files = 0
+
         for rel in copied:
             game_path = os.path.join(game, rel)
             file_name = os.path.basename(rel)
@@ -143,6 +153,7 @@ def revert():
                 try:
                     os.chmod(game_path, stat.S_IWRITE)
                     os.remove(game_path)
+                    removed_files += 1
                 except Exception as e:
                     raise Exception(f"Permission denied on {rel}. Close the game and try again.")
             
@@ -150,9 +161,10 @@ def revert():
                 try:
                     os.chmod(root_path, stat.S_IWRITE)
                     os.remove(root_path)
+                    removed_files += 1
                 except Exception:
                     pass
-            
+
             parent = os.path.dirname(game_path)
             while parent and parent != game:
                 try:
@@ -175,13 +187,14 @@ def revert():
                     if not os.path.exists(game_dir):
                         os.makedirs(game_dir)
                     shutil.copy2(backup_path, game_path)
+                    restored_files += 1
 
             shutil.rmtree(backup_dir)
 
         del data[game]
         save_log(data)
         update_list()
-        messagebox.showinfo("Success", "Reverted to original successfully!")
+        messagebox.showinfo("Success", f"Reverted to original successfully!\n\nFiles removed: {removed_files}\nFiles restored: {restored_files}")
         
     except Exception as e:
         messagebox.showerror("Error", f"Failed to revert: {str(e)}\n\nMake sure the game is not running.")
