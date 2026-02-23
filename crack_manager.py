@@ -63,14 +63,28 @@ def check_structure(*args):
     btn_apply_action.configure(state="normal", fg_color="#2FA572")
 
 def apply():
-    game = game_var.get()
+    raw_game = game_var.get()
     crack = crack_var.get()
 
-    if not game or not crack:
+    if not raw_game or not crack:
         messagebox.showwarning("Warning", "Fill both paths.")
         return
 
+    raw_game = os.path.normpath(raw_game)
     data = load_log()
+    
+    tracked_root = raw_game
+    for existing_game in data.keys():
+        norm_existing = os.path.normpath(existing_game)
+        try:
+            if os.path.commonpath([norm_existing, raw_game]) == norm_existing:
+                tracked_root = existing_game
+                break
+        except ValueError:
+            pass
+
+    game = tracked_root
+    
     name = os.path.basename(game)
     dest = os.path.join(backup, name)
 
@@ -88,28 +102,30 @@ def apply():
     for root, dirs, files in os.walk(crack):
         for file_name in files:
             crack_path = os.path.join(root, file_name)
-            rel = os.path.relpath(crack_path, crack)
-            game_path = os.path.join(game, rel)
-            backup_path = os.path.join(dest, rel)
+            
+            rel_to_crack = os.path.relpath(crack_path, crack)
+            actual_game_path = os.path.join(raw_game, rel_to_crack)
+            rel_for_log = os.path.relpath(actual_game_path, game)
+            backup_path = os.path.join(dest, rel_for_log)
 
             copied_files += 1
 
-            if os.path.exists(game_path):
+            if os.path.exists(actual_game_path):
                 replaced_files += 1
                 backup_dir = os.path.dirname(backup_path)
                 if not os.path.exists(backup_dir):
                     os.makedirs(backup_dir)
                 
                 if not os.path.exists(backup_path):
-                    shutil.copy2(game_path, backup_path)
+                    shutil.copy2(actual_game_path, backup_path)
 
-            game_dir = os.path.dirname(game_path)
+            game_dir = os.path.dirname(actual_game_path)
             if not os.path.exists(game_dir):
                 os.makedirs(game_dir)
-            shutil.copy2(crack_path, game_path)
+            shutil.copy2(crack_path, actual_game_path)
             
-            if rel not in copied:
-                copied.append(rel)
+            if rel_for_log not in copied:
+                copied.append(rel_for_log)
 
     data[game] = {
         "backup": dest,
@@ -371,4 +387,3 @@ show_apply()
 update_list()
 
 window.mainloop()
-
